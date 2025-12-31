@@ -323,7 +323,8 @@ body {
   justify-content: center;
   border-radius: 4px;
   transition: all 0.15s;
-  opacity: 0;
+  opacity: 0.7;
+  flex-shrink: 0;
 }
 
 .tab-item:hover .tab-remove {
@@ -392,4 +393,67 @@ body {
 .footer-link:hover {
   color: #2563eb;
   text-decoration: underline;
+}
+
+/* Error Toast */
+.error-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background-color: var(--danger-color);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  max-width: 300px;
+  text-align: center;
+}
+
+.error-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Improved Tab Remove Button Visibility */
+.tab-remove {
+  opacity: 0.7;
+}
+
+.tab-item:hover .tab-remove,
+.tab-item:focus-within .tab-remove {
+  opacity: 1;
+}
+
+/* Keyboard Focus Styles */
+button:focus-visible,
+.tab-item:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Loading State */
+.btn-capture:disabled,
+.btn-action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Smooth Transitions */
+.group {
+  transition: all 0.2s ease;
+}
+
+.tab-item {
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.tab-item:active {
+  transform: scale(0.98);
 }

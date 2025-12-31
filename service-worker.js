@@ -137,9 +137,9 @@ function extractTabData(tab) {
   try {
     const url = new URL(tab.url);
     
-    // Only skip internal Chrome pages (they can't be reopened properly)
-    // All other domains (google.com, etc.) are allowed
-    if (url.protocol === 'chrome:' || url.protocol === 'chrome-extension:') {
+    // Block dangerous protocols and internal Chrome pages
+    const dangerousProtocols = ['chrome:', 'chrome-extension:', 'javascript:', 'data:', 'vbscript:', 'about:'];
+    if (dangerousProtocols.some(proto => url.protocol === proto)) {
       return null;
     }
     
@@ -240,7 +240,7 @@ async function openTab(url) {
  * Generate unique ID
  */
 function generateId() {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+  return Date.now().toString(36) + Math.random().toString(36).substring(2, 11);
 }
 
 /**

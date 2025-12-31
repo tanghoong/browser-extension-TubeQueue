@@ -18,22 +18,22 @@
           </svg>
           <h1>TabQueue</h1>
         </div>
-        <button id="captureBtn" class="btn-capture" title="Queue All Tabs">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <button id="captureBtn" class="btn-capture" title="Queue All Tabs" aria-label="Queue all open tabs">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             <path d="M2 3h12v2H2zm0 4h12v2H2zm0 4h12v2H2z"/>
           </svg>
-          <span>Queue Tabs</span>
+          <span>Queue All Tabs</span>
         </button>
       </div>
       <div class="header-actions">
-        <button id="restoreAllBtn" class="btn-action" title="Restore All Tabs">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+        <button id="restoreAllBtn" class="btn-action" title="Restore All Tabs" aria-label="Restore all queued tabs">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             <path d="M8 2v2h5v9H3V4h5V2H2v12h12V2z"/>
           </svg>
           <span>Restore All</span>
         </button>
-        <button id="expandCollapseBtn" class="btn-action" title="Expand/Collapse All Groups">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+        <button id="expandCollapseBtn" class="btn-action" title="Expand/Collapse All Groups" aria-label="Toggle expand/collapse all groups">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             <path d="M1 4l4 4 4-4zm0 4l4 4 4-4z"/>
           </svg>
           <span id="expandCollapseText">Collapse All</span>
@@ -42,11 +42,11 @@
     </header>
 
     <!-- Groups Section -->
-    <section class="groups-section">
-      <div id="groupsList" class="groups-list">
+    <section class="groups-section" role="region" aria-label="Queued tabs">
+      <div id="groupsList" class="groups-list" role="list">
         <!-- Groups will be dynamically inserted here -->
         <div class="empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <rect x="3" y="3" width="7" height="7"></rect>
             <rect x="14" y="3" width="7" height="7"></rect>
             <rect x="14" y="14" width="7" height="7"></rect>
