@@ -286,7 +286,7 @@ function attachEventListeners() {
       span.setAttribute('aria-hidden', 'true');
       span.innerHTML = SVG_ICONS.favicon;
       this.parentNode.replaceChild(span, this);
-    }, { once: true }); // Automatically removes after firing
+    }, { once: true }); // Use { once: true } to prevent multiple error handlers
   });
 }
 

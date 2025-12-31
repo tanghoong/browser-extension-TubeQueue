@@ -228,6 +228,15 @@ function mergeTabGroups(existing, newGroups) {
  */
 async function openTab(url) {
   try {
+    // Validate URL before opening
+    const parsedUrl = new URL(url);
+    const dangerousProtocols = ['javascript:', 'data:', 'vbscript:'];
+    
+    if (dangerousProtocols.includes(parsedUrl.protocol)) {
+      console.error('Blocked attempt to open dangerous URL:', url);
+      throw new Error('Cannot open URL with dangerous protocol');
+    }
+    
     await chrome.tabs.create({ url: url });
     console.log('Tab opened:', url);
   } catch (error) {

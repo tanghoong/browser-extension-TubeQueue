@@ -421,10 +421,6 @@ body {
 }
 
 /* Improved Tab Remove Button Visibility */
-.tab-remove {
-  opacity: 0.7;
-}
-
 .tab-item:hover .tab-remove,
 .tab-item:focus-within .tab-remove {
   opacity: 1;
