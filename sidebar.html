@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TabQueue</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-top">
+        <div class="header-brand">
+          <svg class="logo" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <rect width="20" height="20" rx="4" fill="#6b46c1"/>
+            <text x="10" y="15" text-anchor="middle" fill="white" font-size="14" font-weight="bold">Q</text>
+          </svg>
+          <h1>TabQueue</h1>
+        </div>
+        <button id="captureBtn" class="btn-capture" title="Queue All Tabs">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M2 3h12v2H2zm0 4h12v2H2zm0 4h12v2H2z"/>
+          </svg>
+          <span>Queue Tabs</span>
+        </button>
+      </div>
+      <div class="header-actions">
+        <button id="restoreAllBtn" class="btn-action" title="Restore All Tabs">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 2v2h5v9H3V4h5V2H2v12h12V2z"/>
+          </svg>
+          <span>Restore All</span>
+        </button>
+        <button id="expandCollapseBtn" class="btn-action" title="Expand/Collapse All Groups">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M1 4l4 4 4-4zm0 4l4 4 4-4z"/>
+          </svg>
+          <span id="expandCollapseText">Collapse All</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Groups Section -->
+    <section class="groups-section">
+      <div id="groupsList" class="groups-list">
+        <!-- Groups will be dynamically inserted here -->
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          <p>No tabs queued</p>
+          <p class="hint">Click "Queue All Tabs" to organize your open tabs</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-content">
+        <span class="footer-text">Made with focus by</span>
+        <a href="https://github.com" target="_blank" class="footer-link">GitHub Copilot</a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="sidebar.js"></script>
+</body>
+</html>

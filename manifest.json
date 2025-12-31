@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "TabQueue",
+  "version": "1.0.0",
+  "description": "Organize all your browser tabs by domain into a persistent, manageable queue",
+  "permissions": [
+    "tabs",
+    "storage",
+    "sidePanel"
+  ],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_title": "TabQueue - Queue All Tabs"
+  },
+  "side_panel": {
+    "default_path": "sidebar.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
