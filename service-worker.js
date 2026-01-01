@@ -228,9 +228,9 @@ function mergeTabGroups(existing, newGroups) {
  */
 async function openTab(url) {
   try {
-    // Validate URL before opening
+    // Validate URL before opening (consistent with extractTabData)
     const parsedUrl = new URL(url);
-    const dangerousProtocols = ['javascript:', 'data:', 'vbscript:'];
+    const dangerousProtocols = ['chrome:', 'chrome-extension:', 'javascript:', 'data:', 'vbscript:', 'about:'];
     
     if (dangerousProtocols.includes(parsedUrl.protocol)) {
       console.error('Blocked attempt to open dangerous URL:', url);
@@ -249,7 +249,7 @@ async function openTab(url) {
  * Generate unique ID
  */
 function generateId() {
-  return Date.now().toString(36) + Math.random().toString(36).substring(2, 11);
+  return Date.now().toString(36) + Math.random().toString(36).substring(2);
 }
 
 /**

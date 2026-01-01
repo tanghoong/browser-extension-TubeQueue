@@ -3,7 +3,6 @@
 // State
 let tabGroups = [];
 const UNIFIED_GROUP_NAME = 'Other Sites';
-let hasAutoCapture = false; // Track auto-capture in memory
 
 // SVG Icons
 const SVG_ICONS = {
@@ -14,14 +13,15 @@ const SVG_ICONS = {
 };
 
 // Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   console.log('TabQueue Sidebar initialized');
   initializeUI();
   loadGroups();
   
-  // Auto-capture on first open only (use memory flag to avoid race condition)
-  if (!hasAutoCapture) {
-    hasAutoCapture = true;
+  // Auto-capture on first open only (use local storage for persistence)
+  const result = await chrome.storage.local.get(['hasAutoCapture']);
+  if (!result.hasAutoCapture) {
+    chrome.storage.local.set({ hasAutoCapture: true });
     setTimeout(() => {
       handleCaptureTabs();
     }, 500);
@@ -160,7 +160,7 @@ function renderGroup(group, isUnified = false) {
   const chevron = isCollapsed ? SVG_ICONS.chevronRight : SVG_ICONS.chevronDown;
   
   let html = `
-    <div class="group ${isCollapsed ? 'collapsed' : ''}" data-domain="${escapeHtml(group.domain)}" role="listitem">
+    <div class="group ${isCollapsed ? 'collapsed' : ''}" data-domain="${escapeHtml(group.domain)}">
       <div class="group-header" role="button" aria-expanded="${!isCollapsed}" aria-label="${escapeHtml(group.domain)} group with ${tabCount} tabs">
         <button class="group-toggle" aria-hidden="true" tabindex="-1">
           ${chevron}
@@ -251,6 +251,11 @@ function attachEventListeners() {
   
   // Create and store the keyboard handler
   groupsList._keyHandler = (e) => {
+    // Don't handle keyboard events on buttons - they have their own handlers
+    if (e.target.tagName === 'BUTTON') {
+      return;
+    }
+    
     const tabItem = e.target.closest('.tab-item');
     const groupHeader = e.target.closest('.group-header');
     
@@ -459,7 +464,7 @@ function showError(message) {
   toast.className = 'error-toast';
   toast.textContent = message;
   toast.setAttribute('role', 'alert');
-  toast.setAttribute('aria-live', 'polite');
+  toast.setAttribute('aria-live', 'assertive');
   
   document.body.appendChild(toast);
   
