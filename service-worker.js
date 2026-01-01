@@ -137,9 +137,9 @@ function extractTabData(tab) {
   try {
     const url = new URL(tab.url);
     
-    // Only skip internal Chrome pages (they can't be reopened properly)
-    // All other domains (google.com, etc.) are allowed
-    if (url.protocol === 'chrome:' || url.protocol === 'chrome-extension:') {
+    // Block dangerous protocols and internal Chrome pages
+    const dangerousProtocols = ['chrome:', 'chrome-extension:', 'javascript:', 'data:', 'vbscript:', 'about:'];
+    if (dangerousProtocols.some(proto => url.protocol === proto)) {
       return null;
     }
     
@@ -228,6 +228,15 @@ function mergeTabGroups(existing, newGroups) {
  */
 async function openTab(url) {
   try {
+    // Validate URL before opening (consistent with extractTabData)
+    const parsedUrl = new URL(url);
+    const dangerousProtocols = ['chrome:', 'chrome-extension:', 'javascript:', 'data:', 'vbscript:', 'about:'];
+    
+    if (dangerousProtocols.includes(parsedUrl.protocol)) {
+      console.error('Blocked attempt to open dangerous URL:', url);
+      throw new Error('Cannot open URL with dangerous protocol');
+    }
+    
     await chrome.tabs.create({ url: url });
     console.log('Tab opened:', url);
   } catch (error) {
@@ -240,7 +249,7 @@ async function openTab(url) {
  * Generate unique ID
  */
 function generateId() {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+  return Date.now().toString(36) + Math.random().toString(36).substring(2);
 }
 
 /**

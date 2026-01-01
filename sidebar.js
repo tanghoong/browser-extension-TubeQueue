@@ -13,21 +13,19 @@ const SVG_ICONS = {
 };
 
 // Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   console.log('TabQueue Sidebar initialized');
   initializeUI();
   loadGroups();
   
-  // Auto-capture on first open only
-  chrome.storage.session.get(['hasAutoCapture'], (result) => {
-    if (!result.hasAutoCapture) {
-      // First time opening sidebar - auto capture
-      setTimeout(() => {
-        handleCaptureTabs();
-        chrome.storage.session.set({ hasAutoCapture: true });
-      }, 500);
-    }
-  });
+  // Auto-capture on first open only (use local storage for persistence)
+  const result = await chrome.storage.local.get(['hasAutoCapture']);
+  if (!result.hasAutoCapture) {
+    chrome.storage.local.set({ hasAutoCapture: true });
+    setTimeout(() => {
+      handleCaptureTabs();
+    }, 500);
+  }
 });
 
 /**
@@ -78,25 +76,29 @@ async function handleCaptureTabs() {
  * Load groups from storage
  */
 async function loadGroups() {
-  chrome.storage.local.get(['tabGroups'], (result) => {
+  try {
+    const result = await chrome.storage.local.get(['tabGroups']);
     tabGroups = result.tabGroups || [];
     console.log('Groups loaded:', tabGroups.length);
     renderGroups();
-  });
+  } catch (error) {
+    console.error('Error loading groups:', error);
+    showError('Failed to load tabs. Please try refreshing.');
+  }
 }
 
 /**
  * Save groups to storage
  */
-function saveGroups() {
-  chrome.storage.local.set({ tabGroups }, () => {
-    if (chrome.runtime.lastError) {
-      console.error('Error saving groups:', chrome.runtime.lastError);
-    } else {
-      console.log('Groups saved');
-      updateBadge();
-    }
-  });
+async function saveGroups() {
+  try {
+    await chrome.storage.local.set({ tabGroups });
+    console.log('Groups saved');
+    updateBadge();
+  } catch (error) {
+    console.error('Error saving groups:', error);
+    showError('Failed to save changes. Please try again.');
+  }
 }
 
 /**
@@ -159,8 +161,8 @@ function renderGroup(group, isUnified = false) {
   
   let html = `
     <div class="group ${isCollapsed ? 'collapsed' : ''}" data-domain="${escapeHtml(group.domain)}">
-      <div class="group-header">
-        <button class="group-toggle">
+      <div class="group-header" role="button" aria-expanded="${!isCollapsed}" aria-label="${escapeHtml(group.domain)} group with ${tabCount} tabs">
+        <button class="group-toggle" aria-hidden="true" tabindex="-1">
           ${chevron}
         </button>
         <div class="group-title">
@@ -168,7 +170,7 @@ function renderGroup(group, isUnified = false) {
           <span class="tab-count">(${tabCount})</span>
         </div>
       </div>
-      <div class="group-content">
+      <div class="group-content" role="list" aria-label="Tabs in ${escapeHtml(group.domain)}">
   `;
   
   group.tabs.forEach(tab => {
@@ -188,18 +190,18 @@ function renderGroup(group, isUnified = false) {
  */
 function renderTab(tab, groupDomain, isUnified) {
   const favicon = tab.favicon || '';
-  const hasFavicon = !!tab.favicon;
+  const hasFavicon = !!tab.favicon && isValidFaviconUrl(favicon);
   
   return `
-    <div class="tab-item" data-tab-id="${tab.id}" data-url="${escapeHtml(tab.url)}" data-domain="${escapeHtml(groupDomain)}" data-unified="${isUnified}">
+    <div class="tab-item" data-tab-id="${tab.id}" data-url="${escapeHtml(tab.url)}" data-domain="${escapeHtml(groupDomain)}" data-unified="${isUnified}" role="listitem" tabindex="0" aria-label="Open ${escapeHtml(tab.title)}">
       ${hasFavicon 
-        ? `<img src="${escapeHtml(favicon)}" alt="" class="tab-favicon" loading="lazy" data-fallback="true">` 
-        : `<span class="tab-favicon">${SVG_ICONS.favicon}</span>`
+        ? `<img src="${escapeHtml(favicon)}" alt="" class="tab-favicon" loading="lazy" data-fallback="true" aria-hidden="true">` 
+        : `<span class="tab-favicon" aria-hidden="true">${SVG_ICONS.favicon}</span>`
       }
       <div class="tab-info">
         <div class="tab-title">${escapeHtml(tab.title)}</div>
       </div>
-      <button class="tab-remove" title="Remove">
+      <button class="tab-remove" title="Remove" aria-label="Remove ${escapeHtml(tab.title)} from queue" tabindex="0">
         ${SVG_ICONS.close}
       </button>
     </div>
@@ -212,12 +214,16 @@ function renderTab(tab, groupDomain, isUnified) {
 function attachEventListeners() {
   const groupsList = document.getElementById('groupsList');
   
-  // Remove old listeners
-  const newList = groupsList.cloneNode(true);
-  groupsList.parentNode.replaceChild(newList, groupsList);
+  // Remove existing listener if any
+  if (groupsList._clickHandler) {
+    groupsList.removeEventListener('click', groupsList._clickHandler);
+  }
+  if (groupsList._keyHandler) {
+    groupsList.removeEventListener('keydown', groupsList._keyHandler);
+  }
   
-  // Add new listeners
-  document.getElementById('groupsList').addEventListener('click', (e) => {
+  // Create and store the click handler
+  groupsList._clickHandler = (e) => {
     const groupHeader = e.target.closest('.group-header');
     const tabItem = e.target.closest('.tab-item');
     const tabRemove = e.target.closest('.tab-remove');
@@ -241,7 +247,39 @@ function attachEventListeners() {
       const isUnified = tabItem.dataset.unified === 'true';
       openTabAndRemove(url, tabId, domain, isUnified);
     }
-  });
+  };
+  
+  // Create and store the keyboard handler
+  groupsList._keyHandler = (e) => {
+    // Don't handle keyboard events on buttons - they have their own handlers
+    if (e.target.tagName === 'BUTTON') {
+      return;
+    }
+    
+    const tabItem = e.target.closest('.tab-item');
+    const groupHeader = e.target.closest('.group-header');
+    
+    // Handle Enter and Space keys
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      
+      if (tabItem) {
+        const url = tabItem.dataset.url;
+        const tabId = tabItem.dataset.tabId;
+        const domain = tabItem.dataset.domain;
+        const isUnified = tabItem.dataset.unified === 'true';
+        openTabAndRemove(url, tabId, domain, isUnified);
+      } else if (groupHeader) {
+        const group = groupHeader.closest('.group');
+        const domain = group.dataset.domain;
+        toggleGroup(domain);
+      }
+    }
+  };
+  
+  // Add the new listeners
+  groupsList.addEventListener('click', groupsList._clickHandler);
+  groupsList.addEventListener('keydown', groupsList._keyHandler);
   
   // Handle favicon errors
   const faviconImages = groupsList.querySelectorAll('img.tab-favicon[data-fallback="true"]');
@@ -250,9 +288,10 @@ function attachEventListeners() {
       // Replace with SVG icon on error
       const span = document.createElement('span');
       span.className = 'tab-favicon';
+      span.setAttribute('aria-hidden', 'true');
       span.innerHTML = SVG_ICONS.favicon;
       this.parentNode.replaceChild(span, this);
-    });
+    }, { once: true }); // Use { once: true } to prevent multiple error handlers
   });
 }
 
@@ -274,17 +313,19 @@ function toggleGroup(domain) {
 async function openTabAndRemove(url, tabId, domain, isUnified) {
   console.log('Opening tab:', url);
   
-  chrome.runtime.sendMessage({ action: 'openTab', url }, (response) => {
-    if (chrome.runtime.lastError) {
-      console.error('Error opening tab:', chrome.runtime.lastError);
-      return;
-    }
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'openTab', url });
     
     if (response && response.success) {
       // Remove tab from queue
       removeTab(tabId, domain, isUnified);
+    } else {
+      showError('Failed to open tab. Please try again.');
     }
-  });
+  } catch (error) {
+    console.error('Error opening tab:', error);
+    showError('Failed to open tab. Please try again.');
+  }
 }
 
 /**
@@ -323,27 +364,56 @@ function escapeHtml(text) {
 }
 
 /**
+ * Validate favicon URL to prevent XSS
+ */
+function isValidFaviconUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const parsed = new URL(url);
+    // Only allow http, https, and chrome-extension protocols for favicons
+    const allowedProtocols = ['http:', 'https:', 'chrome-extension:'];
+    return allowedProtocols.includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Restore all tabs from queue
  */
-function handleRestoreAll() {
+async function handleRestoreAll() {
   if (tabGroups.length === 0) return;
   
-  if (!confirm(`Restore all ${getTotalTabCount()} tabs? This will open all queued tabs and clear the queue.`)) {
+  const totalTabs = getTotalTabCount();
+  if (!confirm(`Restore all ${totalTabs} tabs? This will open all queued tabs and clear the queue.`)) {
     return;
   }
   
-  // Open all tabs
-  tabGroups.forEach(group => {
-    group.tabs.forEach(tab => {
-      chrome.runtime.sendMessage({ action: 'openTab', url: tab.url });
-    });
-  });
+  const restoreBtn = document.getElementById('restoreAllBtn');
+  restoreBtn.disabled = true;
   
-  // Clear all groups
-  tabGroups = [];
-  saveGroups();
-  updateBadge();
-  renderGroups();
+  try {
+    // Open all tabs
+    for (const group of tabGroups) {
+      for (const tab of group.tabs) {
+        try {
+          await chrome.runtime.sendMessage({ action: 'openTab', url: tab.url });
+        } catch (error) {
+          console.error('Error opening tab:', tab.url, error);
+        }
+      }
+    }
+    
+    // Clear all groups
+    tabGroups = [];
+    await saveGroups();
+    renderGroups();
+  } catch (error) {
+    console.error('Error restoring tabs:', error);
+    showError('Failed to restore all tabs. Some tabs may not have opened.');
+  } finally {
+    restoreBtn.disabled = false;
+  }
 }
 
 /**
@@ -383,4 +453,27 @@ function updateBadge() {
       count: totalTabs 
     });
   });
+}
+
+/**
+ * Show error message to user
+ */
+function showError(message) {
+  // Create error toast notification
+  const toast = document.createElement('div');
+  toast.className = 'error-toast';
+  toast.textContent = message;
+  toast.setAttribute('role', 'alert');
+  toast.setAttribute('aria-live', 'assertive');
+  
+  document.body.appendChild(toast);
+  
+  // Trigger animation
+  setTimeout(() => toast.classList.add('show'), 10);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
 }
